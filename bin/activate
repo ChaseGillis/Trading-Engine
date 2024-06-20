@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/chaseg126/Documents/venv/Trading-Engine"
+VIRTUAL_ENV="/Users/chaseg126/Documents/PROJECTS/Trading-Engine"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

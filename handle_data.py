@@ -7,7 +7,7 @@ import statsmodels.tsa.stattools as ts
 pd.set_option('display.max_rows', 15)
 pd.set_option('display.max_columns', 10)
 
-stock_csv = r"Trading Engine/stock_prices.csv"
+stock_csv = r"stock_prices.csv"
 
 def og_index_change():
     df = pd.read_csv(stock_csv)
