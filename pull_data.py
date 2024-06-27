@@ -18,6 +18,7 @@ def read_keys(path):
 
 # Main function to fetch data and write to CSV
 def get_the_data():
+    years = 2
     pd.set_option('display.max_rows', 15)
     pd.set_option('display.max_columns', 10)
     # Read API keys from file
@@ -29,7 +30,7 @@ def get_the_data():
     request_params = StockBarsRequest(
                             symbol_or_symbols=["TSLA", "AAPL", "GOOG", "MSFT", "T", "TGT", "INTC", "KO", "PEP"],
                             timeframe=TimeFrame.Day,
-                            start=(datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d'),
+                            start=(datetime.now() - timedelta(days=(365*years))).strftime('%Y-%m-%d'),
                             end_date=datetime.now().strftime('%Y-%m-%d')
                             )
 
@@ -37,10 +38,7 @@ def get_the_data():
 
     return bars
 
-def main():
+def pull_data():
     bars = get_the_data()
     bars = bars['close']
     bars.to_csv(r"stock_prices.csv")
-
-if __name__ == '__main__':
-    main()
