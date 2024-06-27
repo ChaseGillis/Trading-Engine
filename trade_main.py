@@ -12,11 +12,19 @@ pd.set_option('display.max_columns', 10)
 
 stock_csv = r"stock_prices.csv"
 def pick_pair(df):
-    corr_matrix = df.corr().abs()  # absolute correlation matrix
+    corr_matrix = df.corr()  # absolute correlation matrix
     sn.heatmap(corr_matrix, annot=True)  # visualize the correlation matrix
-    
-    # Find the pair of stocks with maximum correlation less than 1
-    max_corr_pair = corr_matrix[corr_matrix < 1].stack().idxmax()
+    max_or_min = input("Do you want Max, Min, or abs: ")
+
+    if max_or_min == "Max":
+        # Find the pair of stocks with maximum correlation less than 1
+        max_corr_pair = corr_matrix[corr_matrix < 1].stack().idxmax()
+    elif max_or_min == "Min":
+        max_corr_pair = corr_matrix[corr_matrix > -1].stack().idxmin()
+    else:
+        corr_matrix = corr_matrix.abs()
+        max_corr_pair = corr_matrix[corr_matrix < 1].stack().idxmax()
+
     s1 = max_corr_pair[0]  # first element of the tuple (first stock)
     s2 = max_corr_pair[1]  # second element of the tuple (second stock)
     
@@ -55,6 +63,8 @@ def backtest_strategy(ratio, zscore):
     
     # Calculate cumulative returns
     cumulative_returns = daily_returns.cumsum()
+
+    print(f"Return at the end of the year: {cumulative_returns.iloc[-1]}")
     
     # Plot cumulative returns
     
