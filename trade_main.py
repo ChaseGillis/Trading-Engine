@@ -14,7 +14,9 @@ stock_csv = r"stock_prices.csv"
 def pick_pair(df):
     corr_matrix = df.corr()  # absolute correlation matrix
     sn.heatmap(corr_matrix, annot=True)  # visualize the correlation matrix
-    max_or_min = input("Do you want Max, Min, or abs: ")
+    plt.show()
+    plt.clf()
+    max_or_min = input("Do you want Max, Min, or Abs: ")
 
     if max_or_min == "Max":
         # Find the pair of stocks with maximum correlation less than 1
@@ -32,7 +34,7 @@ def pick_pair(df):
     return s1, s2
 
 def final_formatting():
-    pull_data()
+    #pull_data()
     # Read the CSV file
     df = pd.read_csv(stock_csv, parse_dates=['timestamp'])
 
@@ -64,7 +66,7 @@ def backtest_strategy(ratio, zscore):
     # Calculate cumulative returns
     cumulative_returns = daily_returns.cumsum()
 
-    print(f"Return at the end of the year: {cumulative_returns.iloc[-1]}")
+    print(f"Return at the end of the year: {round(100 * cumulative_returns.iloc[-1], 2)}%")
     
     # Plot cumulative returns
     
@@ -75,6 +77,8 @@ def backtest_strategy(ratio, zscore):
     plt.legend()
     plt.grid(True)
     plt.show()
+    plt.clf()
+
 
     # Calculate performance metrics
     sharpe_ratio = (daily_returns.mean() / daily_returns.std()) * np.sqrt(252)  # Assuming 252 trading days in a year
@@ -109,6 +113,7 @@ def main():
     plt.plot(train_stock2, label = s2)
     plt.legend()
     plt.show()
+    plt.clf()
 
     result = ts.coint(train_stock1, train_stock2)
     cointigration_tstatistic = result[0]
@@ -141,6 +146,7 @@ def main():
     plt.legend()
     plt.title("Price Ratio between stock2 and stock1")
     plt.show()
+    plt.clf()
 
     # note, here you can either use the spread OR the Price ratio approach. Anyways, let's standardize the ratio so we can have a 
     # upper and lower bound to help evaluate our trends.. Let's stick with the ratio data.
@@ -157,6 +163,7 @@ def main():
     plt.legend(loc = 'best')
     plt.title('Z score of Ratio of stock2 to stock1')
     plt.show()
+    plt.clf()
     # For the most part, the range that exists outside of these 'bands' must come converge back to the mean. Thus, you can 
     # determine when you can go long or short the pair (BRK_B to MSFT).
 
@@ -179,6 +186,7 @@ def main():
     plt.ylabel('Ratio')
     plt.title('Ratio between stock2 and stock1 with 5 day and 20 day Moving Averages')
     plt.show()
+    plt.clf()
 
     zscore_20_5.plot()
     
@@ -189,20 +197,21 @@ def main():
     plt.axhline(-1.25, color='green', linestyle='--')
     plt.legend(['Rolling Ratio z-score', 'Mean', '+1','+1.25','-1','-1.25'])
     plt.show()
+    plt.clf()
 
     ratio.plot()
     buy = ratio.copy()
     sell = ratio.copy()
-    buy[zscore_20_5>-1] = 0
-    sell[zscore_20_5<1] = 0
+    buy[zscore_20_5 >- 1] = 0
+    sell[zscore_20_5 < 1] = 0
     buy.plot(color='g', linestyle='None', marker='^')
     sell.plot(color='r', linestyle='None', marker='^')
     x1, x2, y1, y2 = plt.axis()
     plt.axis((x1, x2, ratio.min(), ratio.max()))
     plt.legend(['Ratio', 'Buy Signal', 'Sell Signal'])
     plt.title('Relationship stock2 to stock1')
-    
     plt.show()
+    plt.clf()
     
     # Perform backtest
     cumulative_returns = backtest_strategy(ratio, zscore_20_5)
