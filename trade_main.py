@@ -16,7 +16,9 @@ def pick_pair(df):
     sn.heatmap(corr_matrix, annot=True)  # visualize the correlation matrix
     plt.show()
     plt.clf()
-    max_or_min = input("Do you want Max, Min, or Abs: ")
+
+    # max_or_min = input("Do you want Max, Min, or Abs: ")
+    max_or_min = "Abs"
 
     if max_or_min == "Max":
         # Find the pair of stocks with maximum correlation less than 1
@@ -26,12 +28,48 @@ def pick_pair(df):
     else:
         corr_matrix = corr_matrix.abs()
         max_corr_pair = corr_matrix[corr_matrix < 1].stack().idxmax()
-
-    s1 = max_corr_pair[0]  # first element of the tuple (first stock)
-    s2 = max_corr_pair[1]  # second element of the tuple (second stock)
+        s1 = max_corr_pair[0]  # first element of the tuple (first stock)
+        s2 = max_corr_pair[1]  # second element of the tuple (second stock)
     
-    print(f"Stock1: {s1}\nStock2: {s2}")
-    return s1, s2
+    # Check correlation
+    corr = np.abs(s1.corr(s2))
+    
+    if corr < 1:
+        # Check cointegration
+        result = ts.coint(s1, s2)
+        p_val = result[1]
+        
+        if p_val < 0.05:  # You can adjust this threshold as needed
+            print(f"Stock1: {s1}\nStock2: {s2}")
+            return s1, s2
+
+    symbols = df.columns.tolist()
+    n = len(symbols)
+    
+    for i in range(n):
+        for j in range(i + 1, n):
+            s1 = symbols[i]
+            s2 = symbols[j]
+            
+            # Extract stock data
+            stock1 = df[s1]
+            stock2 = df[s2]
+            
+            # Check correlation
+            corr = np.abs(stock1.corr(stock2))
+            
+            if corr < 1:
+                # Check cointegration
+                result = ts.coint(stock1, stock2)
+                p_val = result[1]
+                
+                if p_val < 0.05:  # You can adjust this threshold as needed
+                    print(f"Stock1: {s1}\nStock2: {s2}")
+                    return s1, s2
+    
+    # If no suitable pair is found
+    print("Couldn't find a suitable pair.")
+    return None, None
 
 def final_formatting():
     #pull_data()
