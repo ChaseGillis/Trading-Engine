@@ -1,6 +1,7 @@
 import pandas as pd
 import requests
 import csv
+import os
 from pathlib import Path
 from datetime import datetime, timedelta
 from alpaca.data.historical import CryptoHistoricalDataClient
