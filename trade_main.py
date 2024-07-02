@@ -166,7 +166,9 @@ def calculate_position_size(account_size, risk_percent, stop_loss_percent):
 
 
 def app():
-    st.title(':blue[Stock Pair Trading Strategy]')
+    st.title(':blue[Stock Pair Trading Strategy] :money_with_wings: :chart:')
+    st.write("*NOTE*")
+    st.write("This website is purely for practice, any use of information from this site is at your own risk...")
 
     df = final_formatting()
     train_start = df.index[0]
