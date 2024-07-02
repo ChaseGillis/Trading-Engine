@@ -13,6 +13,7 @@ pd.set_option('display.max_columns', 10)
 
 stock_csv = r"stock_prices.csv"
 
+
 def calculate_coint_and_adf(stock1, stock2):
     coint_result = ts.coint(stock1, stock2)
     p_val_coint = coint_result[1]
@@ -28,60 +29,50 @@ def check_stationarity(adf_results):
 def pick_pair(df):
     # Compute correlation matrix
     corr_matrix = df.corr()
-    # Create the clustermap on the axes
-    cluster_map = sn.clustermap(corr_matrix, cmap='coolwarm', linewidths=.5, method='average')
-    # Display the plot in Streamlit
-    st.pyplot(cluster_map)
-    # Close the figure to release resources
-    plt.close()# Create a figure and axes for the plot
 
     max_or_min = st.selectbox("Select correlation type:", ["Max", "Min", "Abs"])
 
     if max_or_min == "Max":
-        max_corr_pair = corr_matrix[corr_matrix < 1].stack().idxmax()
-    elif max_or_min == "Min":
-        max_corr_pair = corr_matrix[corr_matrix > -1].stack().idxmin()
-    else:
-        corr_matrix = corr_matrix.abs()
-        max_corr_pair = corr_matrix[corr_matrix < 1].stack().idxmax()
+        best_corr = -np.inf
+        for i in range(len(corr_matrix)):
+            for j in range(i + 1, len(corr_matrix)):
+                if corr_matrix.iloc[i, j] > best_corr:
+                    best_corr = corr_matrix.iloc[i, j]
+                    s1 = df.columns[i]
+                    s2 = df.columns[j]
 
-    s1, s2 = max_corr_pair
+    elif max_or_min == "Min":
+        best_corr = np.inf
+        for i in range(len(corr_matrix)):
+            for j in range(i + 1, len(corr_matrix)):
+                if corr_matrix.iloc[i, j] < best_corr:
+                    best_corr = corr_matrix.iloc[i, j]
+                    s1 = df.columns[i]
+                    s2 = df.columns[j]
+
+    else:  # Absolute value
+        best_corr = -np.inf
+        for i in range(len(corr_matrix)):
+            for j in range(i + 1, len(corr_matrix)):
+                if abs(corr_matrix.iloc[i, j]) > best_corr:
+                    best_corr = abs(corr_matrix.iloc[i, j])
+                    s1 = df.columns[i]
+                    s2 = df.columns[j]
+
     stock1 = df[s1]
     stock2 = df[s2]
 
     p_val_coint, *adf_results = calculate_coint_and_adf(stock1, stock2)
 
     if p_val_coint < 0.1 and check_stationarity(adf_results):
-        st.write(f"Stock1: {s1}\nStock2: {s2}")
-        st.write(f"correlation: {corr_matrix.loc[s1, s2]}")
+        st.write(f"Found suitable pair: {s1} - {s2}")
+        st.write(f"correlation: {best_corr}")
         return s1, s2
-
-    symbols = df.columns.tolist()
-    n = len(symbols)
-
-    for i in range(n):
-        for j in range(i + 1, n):
-            s1 = symbols[i]
-            s2 = symbols[j]
-            stock1 = df[s1]
-            stock2 = df[s2]
-
-            if not stock1.empty and not stock2.empty:
-                if stock1.isnull().any() or stock2.isnull().any():
-                    continue
-                if np.any(np.isinf(stock1)) or np.any(np.isinf(stock2)):
-                    continue
-                corr = np.abs(stock1.corr(stock2))
-
-                if corr < 1:
-                    p_val_coint, *adf_results = calculate_coint_and_adf(stock1, stock2)
-                    if p_val_coint < 0.05 and check_stationarity(adf_results):
-                        st.write(f"Found suitable pair: {s1} - {s2}")
-                        st.write(f"correlation: {corr}")
-                        return s1, s2
 
     st.write("Couldn't find a suitable pair.")
     return None, None
+
+
 
 def final_formatting():
     pull_data()
@@ -89,16 +80,63 @@ def final_formatting():
     df = df.pivot(index='timestamp', columns='symbol', values='close')
     return df
 
-def backtest_strategy(ratio, zscore):
+def backtest_strategy(ratio, zscore, account_size=1000000, risk_percent=0.02, stop_loss_percent=0.07):
     ratio = pd.Series(ratio)
     zscore = pd.Series(zscore)
     long_positions = np.zeros(len(ratio))
     short_positions = np.zeros(len(ratio))
-    long_positions[zscore > -1] = 1
-    short_positions[zscore < 1] = -1
+    
+    # Implementing stop loss at 7%
+    stop_loss = -stop_loss_percent  # Stop loss percentage
+    
+    # Dynamic moving average window
+    def dynamic_moving_average(ratio, volatility_window=20):
+        volatility = ratio.diff().rolling(window=volatility_window).std()
+        return volatility
+    
+    volatility = dynamic_moving_average(ratio)
+    volatility_mean = volatility.mean()
+    
+    # Adjust moving average window sizes dynamically based on volatility
+    if volatility_mean > 0.01:
+        mavg_window_1 = 5
+        mavg_window_2 = 20
+    else:
+        mavg_window_1 = 10
+        mavg_window_2 = 30
+
+    ratios_mavg5 = ratio.rolling(window=mavg_window_1, center=False).mean()
+    ratios_mavg20 = ratio.rolling(window=mavg_window_2, center=False).mean()
+    std_20 = ratio.rolling(window=20, center=False).std()
+    zscore_20_5 = (ratios_mavg5 - ratios_mavg20) / std_20
+    
+    # Adjust Z-score thresholds dynamically
+    zscore_mean = zscore.mean()
+    zscore_std = zscore.std()
+    threshold_long = 1.0
+    threshold_short = -1.0
+    
+    if zscore_std > 0:
+        threshold_long *= zscore_std
+        threshold_short *= zscore_std
+
+    long_positions[zscore > threshold_short] = 1
+    short_positions[zscore < threshold_long] = -1
     long_positions = pd.Series(long_positions, index=ratio.index)
     short_positions = pd.Series(short_positions, index=ratio.index)
-    daily_returns = ratio.diff() * long_positions.shift(1) + ratio.diff() * short_positions.shift(1)
+    
+    # Applying stop loss
+    for i in range(1, len(ratio)):
+        if long_positions[i-1] == 1 and ratio[i] - ratio[i-1] <= stop_loss:
+            long_positions[i] = 0
+        elif short_positions[i-1] == -1 and ratio[i-1] - ratio[i] <= stop_loss:
+            short_positions[i] = 0
+
+    # Position sizing based on account size and risk tolerance
+    long_size = calculate_position_size(account_size, risk_percent, stop_loss_percent)
+    short_size = calculate_position_size(account_size, risk_percent, stop_loss_percent)
+
+    daily_returns = ratio.diff() * long_positions.shift(1) * long_size + ratio.diff() * short_positions.shift(1) * short_size
     cumulative_returns = daily_returns.cumsum()
 
     fig, ax = plt.subplots()
@@ -117,6 +155,14 @@ def backtest_strategy(ratio, zscore):
     st.write(f"Maximum Drawdown: {max_drawdown}")
 
     return cumulative_returns
+
+def calculate_position_size(account_size, risk_percent, stop_loss_percent):
+    total_risk = account_size * risk_percent
+    position_size = total_risk / stop_loss_percent
+    return position_size
+
+
+
 
 
 def app():
