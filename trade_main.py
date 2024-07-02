@@ -250,6 +250,8 @@ def app():
     sell = ratio.copy()
     buy[zscore_20_5 > -1] = 0
     sell[zscore_20_5 < 1] = 0
+    buy = buy[buy.values!=0]
+    sell = sell[sell.values!=0]
     ax.plot(buy.index, buy.values, color='g', linestyle='None', marker='^')
     ax.plot(sell.index, sell.values, color='r', linestyle='None', marker='^')
     ax.legend(['Ratio', 'Buy Signal', 'Sell Signal'])
