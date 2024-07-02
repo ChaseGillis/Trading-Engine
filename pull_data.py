@@ -27,9 +27,6 @@ def get_the_data():
     key_id = os.environ['KEY_ID']
     secret_key = os.environ['SECRET_KEY']
 
-    # Read API keys from file
-    key_id, secret_key = read_keys('/Users/chaseg126/Documents/keys.txt')
-
     # Initialize Alpaca API
     client = StockHistoricalDataClient(key_id, secret_key)
 
