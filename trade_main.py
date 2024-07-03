@@ -51,12 +51,12 @@ def pick_pair(df):
     max_or_min = st.selectbox("Select correlation type:", ["Abs", "Max", "Min"])
 
     if max_or_min == "Max":
-        sort_order = False  # Sort in descending order of correlation
+        sort_order = True  # Sort in descending order of correlation
     elif max_or_min == "Min":
-        sort_order = True  # Sort in ascending order of correlation
+        sort_order = False  # Sort in ascending order of correlation
     else:  # Absolute value
         corr_matrix = corr_matrix.abs()  # Take absolute values of correlations
-        sort_order = False  # Sort in descending order of absolute correlation
+        sort_order = True  # Sort in descending order of absolute correlation
 
     # Sort pairs based on correlation strength
     sorted_pairs = sorted(
