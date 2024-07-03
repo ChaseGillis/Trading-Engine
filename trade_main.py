@@ -24,7 +24,7 @@ def calculate_coint_and_adf(stock1, stock2):
     return p_val_coint, adf_stock1, adf_stock2, adf_spread, adf_ratio
 
 def check_stationarity(adf_results):
-    return all(adf[1] < 0.05 for adf in adf_results)
+    return all(adf[1] < 0.2 for adf in adf_results)
 
 def pick_pair(df):
     # Compute correlation matrix
@@ -33,41 +33,34 @@ def pick_pair(df):
     max_or_min = st.selectbox("Select correlation type:", ["Max", "Min", "Abs"])
 
     if max_or_min == "Max":
-        best_corr = -np.inf
-        for i in range(len(corr_matrix)):
-            for j in range(i + 1, len(corr_matrix)):
-                if corr_matrix.iloc[i, j] > best_corr:
-                    best_corr = corr_matrix.iloc[i, j]
-                    s1 = df.columns[i]
-                    s2 = df.columns[j]
-
+        sort_order = False  # Sort in descending order of correlation
     elif max_or_min == "Min":
-        best_corr = np.inf
-        for i in range(len(corr_matrix)):
-            for j in range(i + 1, len(corr_matrix)):
-                if corr_matrix.iloc[i, j] < best_corr:
-                    best_corr = corr_matrix.iloc[i, j]
-                    s1 = df.columns[i]
-                    s2 = df.columns[j]
-
+        sort_order = True  # Sort in ascending order of correlation
     else:  # Absolute value
-        best_corr = -np.inf
-        for i in range(len(corr_matrix)):
-            for j in range(i + 1, len(corr_matrix)):
-                if abs(corr_matrix.iloc[i, j]) > best_corr:
-                    best_corr = abs(corr_matrix.iloc[i, j])
-                    s1 = df.columns[i]
-                    s2 = df.columns[j]
+        corr_matrix = corr_matrix.abs()  # Take absolute values of correlations
+        sort_order = False  # Sort in descending order of absolute correlation
 
-    stock1 = df[s1]
-    stock2 = df[s2]
+    # Sort pairs based on correlation strength
+    sorted_pairs = sorted(
+        ((corr_matrix.iloc[i, j], df.columns[i], df.columns[j])
+         for i in range(len(corr_matrix.columns))
+         for j in range(i + 1, len(corr_matrix.columns))),
+        reverse=sort_order
+    )
 
-    p_val_coint, *adf_results = calculate_coint_and_adf(stock1, stock2)
+    for corr_value, s1, s2 in sorted_pairs:
+        stock1 = df[s1]
+        stock2 = df[s2]
 
-    if p_val_coint < 0.1 and check_stationarity(adf_results):
-        st.write(f"Found suitable pair: {s1} - {s2}")
-        st.write(f"correlation: {best_corr}")
-        return s1, s2
+        p_val_coint, *adf_results = calculate_coint_and_adf(stock1, stock2)
+
+        if p_val_coint < 0.2 and check_stationarity(adf_results):
+            st.write(f"Found suitable pair: {s1} - {s2}")
+            st.write(f"Correlation: {corr_value}")
+            return s1, s2
+
+        if abs(corr_value) < 0.6:
+            break  # Stop searching if absolute correlation drops below 0.6
 
     st.write("Couldn't find a suitable pair.")
     return None, None
