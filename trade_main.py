@@ -15,6 +15,18 @@ stock_csv = r"stock_prices.csv"
 
 
 def calculate_coint_and_adf(stock1, stock2):
+    # Check for empty dataframes
+    if stock1.empty or stock2.empty:
+        return None, None, None, None, None
+
+    # Check for NaN values
+    if stock1.isnull().any() or stock2.isnull().any():
+        return None, None, None, None, None
+
+    # Check for infinite values
+    if np.any(np.isinf(stock1)) or np.any(np.isinf(stock2)):
+        return None, None, None, None, None
+
     coint_result = ts.coint(stock1, stock2)
     p_val_coint = coint_result[1]
     adf_stock1 = adfuller(stock1)
@@ -29,6 +41,12 @@ def check_stationarity(adf_results):
 def pick_pair(df):
     # Compute correlation matrix
     corr_matrix = df.corr()
+    # Create the clustermap on the axes
+    cluster_map = sn.clustermap(corr_matrix, cmap='coolwarm', linewidths=.5, method='average')
+    # Display the plot in Streamlit
+    st.pyplot(cluster_map)
+    # Close the figure to release resources
+    plt.close()# Create a figure and axes for the plot
 
     max_or_min = st.selectbox("Select correlation type:", ["Max", "Min", "Abs"])
 
@@ -53,6 +71,9 @@ def pick_pair(df):
         stock2 = df[s2]
 
         p_val_coint, *adf_results = calculate_coint_and_adf(stock1, stock2)
+
+        if not p_val_coint or not adf_results:
+            continue
 
         if p_val_coint < 0.2 and check_stationarity(adf_results):
             st.write(f"Found suitable pair: {s1} - {s2}")
