@@ -278,7 +278,7 @@ def app():
     a_size = st.selectbox("Enter the account size:", [100,100000,1000000])
 
     cumulative_returns = backtest_strategy(ratio, zscore_20_5, a_size)
-    st.write(f"Cumulative Returns: {cumulative_returns}")
+    st.write(f"Cumulative Returns: {cumulative_returns.iloc[-1]}")
 
 if __name__ == '__main__':
     app()
