@@ -48,7 +48,7 @@ def pick_pair(df):
     # Close the figure to release resources
     plt.close()# Create a figure and axes for the plot
 
-    max_or_min = st.selectbox("Select correlation type:", ["Max", "Min", "Abs"])
+    max_or_min = st.selectbox("Select correlation type:", ["Abs", "Max", "Min"])
 
     if max_or_min == "Max":
         sort_order = False  # Sort in descending order of correlation
@@ -94,7 +94,7 @@ def final_formatting():
     df = df.pivot(index='timestamp', columns='symbol', values='close')
     return df
 
-def backtest_strategy(ratio, zscore, account_size=1000000, risk_percent=0.02, stop_loss_percent=0.07):
+def backtest_strategy(ratio, zscore, account_size=a_size, risk_percent=0.02, stop_loss_percent=0.07):
     ratio = pd.Series(ratio)
     zscore = pd.Series(zscore)
     long_positions = np.zeros(len(ratio))
@@ -275,7 +275,10 @@ def app():
     st.pyplot(fig)
     plt.close(fig)
 
+    a_size = st.selectbox("Enter the account size:", [100,100000,1000000])
+
     cumulative_returns = backtest_strategy(ratio, zscore_20_5)
+    st.write(f"Cumulative Returns: {cumulative_returns}")
 
 if __name__ == '__main__':
     app()
