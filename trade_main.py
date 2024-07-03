@@ -94,7 +94,7 @@ def final_formatting():
     df = df.pivot(index='timestamp', columns='symbol', values='close')
     return df
 
-def backtest_strategy(ratio, zscore, account_size=a_size, risk_percent=0.02, stop_loss_percent=0.07):
+def backtest_strategy(ratio, zscore, account_size, risk_percent=0.02, stop_loss_percent=0.07):
     ratio = pd.Series(ratio)
     zscore = pd.Series(zscore)
     long_positions = np.zeros(len(ratio))
@@ -277,7 +277,7 @@ def app():
 
     a_size = st.selectbox("Enter the account size:", [100,100000,1000000])
 
-    cumulative_returns = backtest_strategy(ratio, zscore_20_5)
+    cumulative_returns = backtest_strategy(ratio, zscore_20_5, a_size)
     st.write(f"Cumulative Returns: {cumulative_returns}")
 
 if __name__ == '__main__':
