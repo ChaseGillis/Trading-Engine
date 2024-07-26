@@ -11,7 +11,6 @@ pd.set_option('display.max_columns', 10)
 
 stock_csv = r"stock_prices.csv"
 
-
 def calculate_coint_and_adf(stock1, stock2):
     if stock1.empty or stock2.empty:
         return None, None, None, None, None
@@ -74,12 +73,12 @@ def pick_pair(df):
     return None, None
 
 def final_formatting():
-    pull_data()
+    #pull_data()
     df = pd.read_csv(stock_csv, parse_dates=['timestamp'])
     df = df.pivot(index='timestamp', columns='symbol', values='close')
     return df
 
-def backtest_strategy(ratio, zscore, account_size, risk_percent=0.02, stop_loss_percent=0.07):
+def backtest_strategy(ratio, zscore, account_size, risk_percent=0.02, stop_loss_percent=0.04):
     ratio = pd.Series(ratio)
     zscore = pd.Series(zscore)
     long_positions = np.zeros(len(ratio))
@@ -121,10 +120,10 @@ def backtest_strategy(ratio, zscore, account_size, risk_percent=0.02, stop_loss_
     short_positions = pd.Series(short_positions, index=ratio.index)
 
     for i in range(1, len(ratio)):
-        if long_positions[i-1] == 1 and ratio[i] - ratio[i-1] <= stop_loss:
-            long_positions[i] = 0
-        elif short_positions[i-1] == -1 and ratio[i-1] - ratio[i] <= stop_loss:
-            short_positions[i] = 0
+        if long_positions.iloc[i-1] == 1 and ratio.iloc[i] - ratio.iloc[i-1] <= stop_loss:
+            long_positions.iloc[i] = 0
+        elif short_positions.iloc[i-1] == -1 and ratio.iloc[i-1] - ratio.iloc[i] <= stop_loss:
+            short_positions.iloc[i] = 0
 
     long_size = calculate_position_size(account_size, risk_percent, stop_loss_percent)
     short_size = calculate_position_size(account_size, risk_percent, stop_loss_percent)
